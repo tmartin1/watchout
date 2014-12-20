@@ -9,7 +9,18 @@ Feel free to use it if you like. */
 }
 
 .asteroid {
-  height : 50px;
-  width : 50px;
+  -webkit-animation-name: spin;
+  -webkit-animation-duration: 1.5s;
+  -webkit-animation-iteration-count: infinite;
+  transform-origin: 50% 50%;
 }
 
+/* spinning animation */
+@-webkit-keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

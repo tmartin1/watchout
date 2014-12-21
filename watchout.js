@@ -11,7 +11,7 @@ var board = d3.select("body").append("svg")
 var asteroidMaker = function(num) {
   var result = [];
   for (var i=0; i<num; i++) {
-    result.push([0,0]);
+    result.push([0,0,i]);
   }
   return result;
 };
@@ -26,6 +26,7 @@ var populate = function(data) {
       .attr("xlink:href", "asteroid.png")
       .attr("x", function(d) { return d[0]; })
       .attr("y", function(d) { return d[1]; })
+      .attr("id", function(d) { return d[2]; })
       .attr("height", 50)
       .attr("width", 50);
 };
@@ -50,57 +51,57 @@ var drag = d3.behavior.drag()
 player.call(drag);
 
 // make pieces move
+var asteroids = d3.selectAll(".asteroid");
 var update = function(data) {
-  var pieces = d3.selectAll(".asteroid")
-      .data(data)
-      .transition()
-        .duration(1100)
-        .attr("x", function(d) { return d[0] * width; })
-        .attr("y", function(d) { return d[1] * height; });
+  data.transition()
+    .duration(1000)
+    .attr("x", function() { return Math.random() * width; })
+    .attr("y", function() { return Math.random() * height; })
+    .each("end",function() {
+      update( d3.select(this) );
+    });
 };
-
-setInterval(function() {
-  for (var i=0; i<data.length; i++) {
-    data[i][0] = Math.random();
-    data[i][1] = Math.random();
-  }
-  update(data);
-}, 1000);
+update(asteroids);
 
 // detect player-asteroid collision
-var asteroids = d3.selectAll(".asteroid");
-var collisions = 0;
 var currentScore = 0;
 var highScore = 0;
 setInterval(function() {
-  // Increment current score
   currentScore++;
   d3.select(".current").select("span").text(currentScore);
+}, 100);
 
-  // find player position
-  var Px = player.attr("cx");
-  var Py = player.attr("cy");
-  var Pr = player.attr("r");
+var previousCollision = false;
+var collisions = 0;
 
+var detect = function() {
+  var collision = false;
   asteroids.each(function() {
+    var Px = player.attr("cx");
+    var Py = player.attr("cy");
+    var Pr = player.attr("r");
     var currentA = d3.select(this);
     var Ax = currentA.attr("x") + 25;
     var Ay = currentA.attr("y") + 25;
-    // deriving a radius from svg top left x,y
+    // because asteroids are square, radius is 1/2 x
     var Ar = 25;
 
     var dist = Math.sqrt(Math.pow(Ax-Px,2) + Math.pow(Ay-Py,2));
     var minDistance = parseInt(Ar) + parseInt(Pr);
-
     if (dist < minDistance) {
-      collisions++;
-      d3.select(".collisions").select("span").text(collisions);
+      collision = true;
+      if (previousCollision !== collision) {
+        collisions++;
+      }
       if (currentScore > highScore) {
         highScore = currentScore;
         d3.select(".high").select("span").text(highScore);
       }
+      d3.select(".collisions").select("span").text(collisions);
       currentScore = 0;
     }
   });
-}, 10)
+  previousCollision = collision;
+};
+d3.timer(detect);
 
